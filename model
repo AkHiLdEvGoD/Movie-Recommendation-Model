@@ -1,0 +1,2009 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c29be7c4",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:18.732745Z",
+     "iopub.status.busy": "2025-01-13T19:00:18.732418Z",
+     "iopub.status.idle": "2025-01-13T19:00:19.118754Z",
+     "shell.execute_reply": "2025-01-13T19:00:19.117523Z"
+    },
+    "papermill": {
+     "duration": 0.398815,
+     "end_time": "2025-01-13T19:00:19.120589",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:18.721774",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/tmdb-movie-metadata/tmdb_5000_movies.csv\n",
+      "/kaggle/input/tmdb-movie-metadata/tmdb_5000_credits.csv\n"
+     ]
+    }
+   ],
+   "source": [
+    "# This Python 3 environment comes with many helpful analytics libraries installed\n",
+    "# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n",
+    "# For example, here's several helpful packages to load\n",
+    "\n",
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "import warnings\n",
+    "# Input data files are available in the read-only \"../input/\" directory\n",
+    "# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "warnings.filterwarnings('ignore')\n",
+    "# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n",
+    "# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4e28c185",
+   "metadata": {
+    "papermill": {
+     "duration": 0.008711,
+     "end_time": "2025-01-13T19:00:19.138504",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:19.129793",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Importing Dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "84f9a901",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:19.156732Z",
+     "iopub.status.busy": "2025-01-13T19:00:19.156242Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.140230Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.139261Z"
+    },
+    "papermill": {
+     "duration": 0.995294,
+     "end_time": "2025-01-13T19:00:20.142141",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:19.146847",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies = pd.read_csv('/kaggle/input/tmdb-movie-metadata/tmdb_5000_movies.csv')\n",
+    "credits = pd.read_csv('/kaggle/input/tmdb-movie-metadata/tmdb_5000_credits.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "bcc0f54f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.160537Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.160129Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.188222Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.187126Z"
+    },
+    "papermill": {
+     "duration": 0.039257,
+     "end_time": "2025-01-13T19:00:20.189806",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.150549",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>budget</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>homepage</th>\n",
+       "      <th>id</th>\n",
+       "      <th>keywords</th>\n",
+       "      <th>original_language</th>\n",
+       "      <th>original_title</th>\n",
+       "      <th>overview</th>\n",
+       "      <th>popularity</th>\n",
+       "      <th>production_companies</th>\n",
+       "      <th>production_countries</th>\n",
+       "      <th>release_date</th>\n",
+       "      <th>revenue</th>\n",
+       "      <th>runtime</th>\n",
+       "      <th>spoken_languages</th>\n",
+       "      <th>status</th>\n",
+       "      <th>tagline</th>\n",
+       "      <th>title</th>\n",
+       "      <th>vote_average</th>\n",
+       "      <th>vote_count</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>237000000</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>http://www.avatarmovie.com/</td>\n",
+       "      <td>19995</td>\n",
+       "      <td>[{\"id\": 1463, \"name\": \"culture clash\"}, {\"id\":...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>In the 22nd century, a paraplegic Marine is di...</td>\n",
+       "      <td>150.437577</td>\n",
+       "      <td>[{\"name\": \"Ingenious Film Partners\", \"id\": 289...</td>\n",
+       "      <td>[{\"iso_3166_1\": \"US\", \"name\": \"United States o...</td>\n",
+       "      <td>2009-12-10</td>\n",
+       "      <td>2787965087</td>\n",
+       "      <td>162.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}, {\"iso...</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>Enter the World of Pandora.</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>7.2</td>\n",
+       "      <td>11800</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>300000000</td>\n",
+       "      <td>[{\"id\": 12, \"name\": \"Adventure\"}, {\"id\": 14, \"...</td>\n",
+       "      <td>http://disney.go.com/disneypictures/pirates/</td>\n",
+       "      <td>285</td>\n",
+       "      <td>[{\"id\": 270, \"name\": \"ocean\"}, {\"id\": 726, \"na...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>Captain Barbossa, long believed to be dead, ha...</td>\n",
+       "      <td>139.082615</td>\n",
+       "      <td>[{\"name\": \"Walt Disney Pictures\", \"id\": 2}, {\"...</td>\n",
+       "      <td>[{\"iso_3166_1\": \"US\", \"name\": \"United States o...</td>\n",
+       "      <td>2007-05-19</td>\n",
+       "      <td>961000000</td>\n",
+       "      <td>169.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>At the end of the world, the adventure begins.</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>6.9</td>\n",
+       "      <td>4500</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>245000000</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>http://www.sonypictures.com/movies/spectre/</td>\n",
+       "      <td>206647</td>\n",
+       "      <td>[{\"id\": 470, \"name\": \"spy\"}, {\"id\": 818, \"name...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>A cryptic message from Bond’s past sends him o...</td>\n",
+       "      <td>107.376788</td>\n",
+       "      <td>[{\"name\": \"Columbia Pictures\", \"id\": 5}, {\"nam...</td>\n",
+       "      <td>[{\"iso_3166_1\": \"GB\", \"name\": \"United Kingdom\"...</td>\n",
+       "      <td>2015-10-26</td>\n",
+       "      <td>880674609</td>\n",
+       "      <td>148.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"fr\", \"name\": \"Fran\\u00e7ais\"},...</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>A Plan No One Escapes</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>6.3</td>\n",
+       "      <td>4466</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>250000000</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 80, \"nam...</td>\n",
+       "      <td>http://www.thedarkknightrises.com/</td>\n",
+       "      <td>49026</td>\n",
+       "      <td>[{\"id\": 849, \"name\": \"dc comics\"}, {\"id\": 853,...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>Following the death of District Attorney Harve...</td>\n",
+       "      <td>112.312950</td>\n",
+       "      <td>[{\"name\": \"Legendary Pictures\", \"id\": 923}, {\"...</td>\n",
+       "      <td>[{\"iso_3166_1\": \"US\", \"name\": \"United States o...</td>\n",
+       "      <td>2012-07-16</td>\n",
+       "      <td>1084939099</td>\n",
+       "      <td>165.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>The Legend Ends</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>7.6</td>\n",
+       "      <td>9106</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>260000000</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>http://movies.disney.com/john-carter</td>\n",
+       "      <td>49529</td>\n",
+       "      <td>[{\"id\": 818, \"name\": \"based on novel\"}, {\"id\":...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>John Carter is a war-weary, former military ca...</td>\n",
+       "      <td>43.926995</td>\n",
+       "      <td>[{\"name\": \"Walt Disney Pictures\", \"id\": 2}]</td>\n",
+       "      <td>[{\"iso_3166_1\": \"US\", \"name\": \"United States o...</td>\n",
+       "      <td>2012-03-07</td>\n",
+       "      <td>284139100</td>\n",
+       "      <td>132.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>Lost in our world, found in another.</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>6.1</td>\n",
+       "      <td>2124</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      budget                                             genres  \\\n",
+       "0  237000000  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "1  300000000  [{\"id\": 12, \"name\": \"Adventure\"}, {\"id\": 14, \"...   \n",
+       "2  245000000  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "3  250000000  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 80, \"nam...   \n",
+       "4  260000000  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "\n",
+       "                                       homepage      id  \\\n",
+       "0                   http://www.avatarmovie.com/   19995   \n",
+       "1  http://disney.go.com/disneypictures/pirates/     285   \n",
+       "2   http://www.sonypictures.com/movies/spectre/  206647   \n",
+       "3            http://www.thedarkknightrises.com/   49026   \n",
+       "4          http://movies.disney.com/john-carter   49529   \n",
+       "\n",
+       "                                            keywords original_language  \\\n",
+       "0  [{\"id\": 1463, \"name\": \"culture clash\"}, {\"id\":...                en   \n",
+       "1  [{\"id\": 270, \"name\": \"ocean\"}, {\"id\": 726, \"na...                en   \n",
+       "2  [{\"id\": 470, \"name\": \"spy\"}, {\"id\": 818, \"name...                en   \n",
+       "3  [{\"id\": 849, \"name\": \"dc comics\"}, {\"id\": 853,...                en   \n",
+       "4  [{\"id\": 818, \"name\": \"based on novel\"}, {\"id\":...                en   \n",
+       "\n",
+       "                             original_title  \\\n",
+       "0                                    Avatar   \n",
+       "1  Pirates of the Caribbean: At World's End   \n",
+       "2                                   Spectre   \n",
+       "3                     The Dark Knight Rises   \n",
+       "4                               John Carter   \n",
+       "\n",
+       "                                            overview  popularity  \\\n",
+       "0  In the 22nd century, a paraplegic Marine is di...  150.437577   \n",
+       "1  Captain Barbossa, long believed to be dead, ha...  139.082615   \n",
+       "2  A cryptic message from Bond’s past sends him o...  107.376788   \n",
+       "3  Following the death of District Attorney Harve...  112.312950   \n",
+       "4  John Carter is a war-weary, former military ca...   43.926995   \n",
+       "\n",
+       "                                production_companies  \\\n",
+       "0  [{\"name\": \"Ingenious Film Partners\", \"id\": 289...   \n",
+       "1  [{\"name\": \"Walt Disney Pictures\", \"id\": 2}, {\"...   \n",
+       "2  [{\"name\": \"Columbia Pictures\", \"id\": 5}, {\"nam...   \n",
+       "3  [{\"name\": \"Legendary Pictures\", \"id\": 923}, {\"...   \n",
+       "4        [{\"name\": \"Walt Disney Pictures\", \"id\": 2}]   \n",
+       "\n",
+       "                                production_countries release_date     revenue  \\\n",
+       "0  [{\"iso_3166_1\": \"US\", \"name\": \"United States o...   2009-12-10  2787965087   \n",
+       "1  [{\"iso_3166_1\": \"US\", \"name\": \"United States o...   2007-05-19   961000000   \n",
+       "2  [{\"iso_3166_1\": \"GB\", \"name\": \"United Kingdom\"...   2015-10-26   880674609   \n",
+       "3  [{\"iso_3166_1\": \"US\", \"name\": \"United States o...   2012-07-16  1084939099   \n",
+       "4  [{\"iso_3166_1\": \"US\", \"name\": \"United States o...   2012-03-07   284139100   \n",
+       "\n",
+       "   runtime                                   spoken_languages    status  \\\n",
+       "0    162.0  [{\"iso_639_1\": \"en\", \"name\": \"English\"}, {\"iso...  Released   \n",
+       "1    169.0           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "2    148.0  [{\"iso_639_1\": \"fr\", \"name\": \"Fran\\u00e7ais\"},...  Released   \n",
+       "3    165.0           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "4    132.0           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "\n",
+       "                                          tagline  \\\n",
+       "0                     Enter the World of Pandora.   \n",
+       "1  At the end of the world, the adventure begins.   \n",
+       "2                           A Plan No One Escapes   \n",
+       "3                                 The Legend Ends   \n",
+       "4            Lost in our world, found in another.   \n",
+       "\n",
+       "                                      title  vote_average  vote_count  \n",
+       "0                                    Avatar           7.2       11800  \n",
+       "1  Pirates of the Caribbean: At World's End           6.9        4500  \n",
+       "2                                   Spectre           6.3        4466  \n",
+       "3                     The Dark Knight Rises           7.6        9106  \n",
+       "4                               John Carter           6.1        2124  "
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "36bc350d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.209120Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.208736Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.218932Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.217899Z"
+    },
+    "papermill": {
+     "duration": 0.021707,
+     "end_time": "2025-01-13T19:00:20.220632",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.198925",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>cast</th>\n",
+       "      <th>crew</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>19995</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>[{\"cast_id\": 242, \"character\": \"Jake Sully\", \"...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe48009251416c750aca23\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>285</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>[{\"cast_id\": 4, \"character\": \"Captain Jack Spa...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe4232c3a36847f800b579\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>206647</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>[{\"cast_id\": 1, \"character\": \"James Bond\", \"cr...</td>\n",
+       "      <td>[{\"credit_id\": \"54805967c3a36829b5002c41\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>49026</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>[{\"cast_id\": 2, \"character\": \"Bruce Wayne / Ba...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe4781c3a36847f81398c3\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>49529</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>[{\"cast_id\": 5, \"character\": \"John Carter\", \"c...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe479ac3a36847f813eaa3\", \"de...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                                     title  \\\n",
+       "0     19995                                    Avatar   \n",
+       "1       285  Pirates of the Caribbean: At World's End   \n",
+       "2    206647                                   Spectre   \n",
+       "3     49026                     The Dark Knight Rises   \n",
+       "4     49529                               John Carter   \n",
+       "\n",
+       "                                                cast  \\\n",
+       "0  [{\"cast_id\": 242, \"character\": \"Jake Sully\", \"...   \n",
+       "1  [{\"cast_id\": 4, \"character\": \"Captain Jack Spa...   \n",
+       "2  [{\"cast_id\": 1, \"character\": \"James Bond\", \"cr...   \n",
+       "3  [{\"cast_id\": 2, \"character\": \"Bruce Wayne / Ba...   \n",
+       "4  [{\"cast_id\": 5, \"character\": \"John Carter\", \"c...   \n",
+       "\n",
+       "                                                crew  \n",
+       "0  [{\"credit_id\": \"52fe48009251416c750aca23\", \"de...  \n",
+       "1  [{\"credit_id\": \"52fe4232c3a36847f800b579\", \"de...  \n",
+       "2  [{\"credit_id\": \"54805967c3a36829b5002c41\", \"de...  \n",
+       "3  [{\"credit_id\": \"52fe4781c3a36847f81398c3\", \"de...  \n",
+       "4  [{\"credit_id\": \"52fe479ac3a36847f813eaa3\", \"de...  "
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "credits.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7a35a973",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009217,
+     "end_time": "2025-01-13T19:00:20.239596",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.230379",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "##  Data Preprocessing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "f14b314a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.259214Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.258839Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.265596Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.264537Z"
+    },
+    "papermill": {
+     "duration": 0.018328,
+     "end_time": "2025-01-13T19:00:20.267103",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.248775",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array(['[{\"cast_id\": 242, \"character\": \"Jake Sully\", \"credit_id\": \"5602a8a7c3a3685532001c9a\", \"gender\": 2, \"id\": 65731, \"name\": \"Sam Worthington\", \"order\": 0}, {\"cast_id\": 3, \"character\": \"Neytiri\", \"credit_id\": \"52fe48009251416c750ac9cb\", \"gender\": 1, \"id\": 8691, \"name\": \"Zoe Saldana\", \"order\": 1}, {\"cast_id\": 25, \"character\": \"Dr. Grace Augustine\", \"credit_id\": \"52fe48009251416c750aca39\", \"gender\": 1, \"id\": 10205, \"name\": \"Sigourney Weaver\", \"order\": 2}, {\"cast_id\": 4, \"character\": \"Col. Quaritch\", \"credit_id\": \"52fe48009251416c750ac9cf\", \"gender\": 2, \"id\": 32747, \"name\": \"Stephen Lang\", \"order\": 3}, {\"cast_id\": 5, \"character\": \"Trudy Chacon\", \"credit_id\": \"52fe48009251416c750ac9d3\", \"gender\": 1, \"id\": 17647, \"name\": \"Michelle Rodriguez\", \"order\": 4}, {\"cast_id\": 8, \"character\": \"Selfridge\", \"credit_id\": \"52fe48009251416c750ac9e1\", \"gender\": 2, \"id\": 1771, \"name\": \"Giovanni Ribisi\", \"order\": 5}, {\"cast_id\": 7, \"character\": \"Norm Spellman\", \"credit_id\": \"52fe48009251416c750ac9dd\", \"gender\": 2, \"id\": 59231, \"name\": \"Joel David Moore\", \"order\": 6}, {\"cast_id\": 9, \"character\": \"Moat\", \"credit_id\": \"52fe48009251416c750ac9e5\", \"gender\": 1, \"id\": 30485, \"name\": \"CCH Pounder\", \"order\": 7}, {\"cast_id\": 11, \"character\": \"Eytukan\", \"credit_id\": \"52fe48009251416c750ac9ed\", \"gender\": 2, \"id\": 15853, \"name\": \"Wes Studi\", \"order\": 8}, {\"cast_id\": 10, \"character\": \"Tsu\\'Tey\", \"credit_id\": \"52fe48009251416c750ac9e9\", \"gender\": 2, \"id\": 10964, \"name\": \"Laz Alonso\", \"order\": 9}, {\"cast_id\": 12, \"character\": \"Dr. Max Patel\", \"credit_id\": \"52fe48009251416c750ac9f1\", \"gender\": 2, \"id\": 95697, \"name\": \"Dileep Rao\", \"order\": 10}, {\"cast_id\": 13, \"character\": \"Lyle Wainfleet\", \"credit_id\": \"52fe48009251416c750ac9f5\", \"gender\": 2, \"id\": 98215, \"name\": \"Matt Gerald\", \"order\": 11}, {\"cast_id\": 32, \"character\": \"Private Fike\", \"credit_id\": \"52fe48009251416c750aca5b\", \"gender\": 2, \"id\": 154153, \"name\": \"Sean Anthony Moran\", \"order\": 12}, {\"cast_id\": 33, \"character\": \"Cryo Vault Med Tech\", \"credit_id\": \"52fe48009251416c750aca5f\", \"gender\": 2, \"id\": 397312, \"name\": \"Jason Whyte\", \"order\": 13}, {\"cast_id\": 34, \"character\": \"Venture Star Crew Chief\", \"credit_id\": \"52fe48009251416c750aca63\", \"gender\": 2, \"id\": 42317, \"name\": \"Scott Lawrence\", \"order\": 14}, {\"cast_id\": 35, \"character\": \"Lock Up Trooper\", \"credit_id\": \"52fe48009251416c750aca67\", \"gender\": 2, \"id\": 986734, \"name\": \"Kelly Kilgour\", \"order\": 15}, {\"cast_id\": 36, \"character\": \"Shuttle Pilot\", \"credit_id\": \"52fe48009251416c750aca6b\", \"gender\": 0, \"id\": 1207227, \"name\": \"James Patrick Pitt\", \"order\": 16}, {\"cast_id\": 37, \"character\": \"Shuttle Co-Pilot\", \"credit_id\": \"52fe48009251416c750aca6f\", \"gender\": 0, \"id\": 1180936, \"name\": \"Sean Patrick Murphy\", \"order\": 17}, {\"cast_id\": 38, \"character\": \"Shuttle Crew Chief\", \"credit_id\": \"52fe48009251416c750aca73\", \"gender\": 2, \"id\": 1019578, \"name\": \"Peter Dillon\", \"order\": 18}, {\"cast_id\": 39, \"character\": \"Tractor Operator / Troupe\", \"credit_id\": \"52fe48009251416c750aca77\", \"gender\": 0, \"id\": 91443, \"name\": \"Kevin Dorman\", \"order\": 19}, {\"cast_id\": 40, \"character\": \"Dragon Gunship Pilot\", \"credit_id\": \"52fe48009251416c750aca7b\", \"gender\": 2, \"id\": 173391, \"name\": \"Kelson Henderson\", \"order\": 20}, {\"cast_id\": 41, \"character\": \"Dragon Gunship Gunner\", \"credit_id\": \"52fe48009251416c750aca7f\", \"gender\": 0, \"id\": 1207236, \"name\": \"David Van Horn\", \"order\": 21}, {\"cast_id\": 42, \"character\": \"Dragon Gunship Navigator\", \"credit_id\": \"52fe48009251416c750aca83\", \"gender\": 0, \"id\": 215913, \"name\": \"Jacob Tomuri\", \"order\": 22}, {\"cast_id\": 43, \"character\": \"Suit #1\", \"credit_id\": \"52fe48009251416c750aca87\", \"gender\": 0, \"id\": 143206, \"name\": \"Michael Blain-Rozgay\", \"order\": 23}, {\"cast_id\": 44, \"character\": \"Suit #2\", \"credit_id\": \"52fe48009251416c750aca8b\", \"gender\": 2, \"id\": 169676, \"name\": \"Jon Curry\", \"order\": 24}, {\"cast_id\": 46, \"character\": \"Ambient Room Tech\", \"credit_id\": \"52fe48009251416c750aca8f\", \"gender\": 0, \"id\": 1048610, \"name\": \"Luke Hawker\", \"order\": 25}, {\"cast_id\": 47, \"character\": \"Ambient Room Tech / Troupe\", \"credit_id\": \"52fe48009251416c750aca93\", \"gender\": 0, \"id\": 42288, \"name\": \"Woody Schultz\", \"order\": 26}, {\"cast_id\": 48, \"character\": \"Horse Clan Leader\", \"credit_id\": \"52fe48009251416c750aca97\", \"gender\": 2, \"id\": 68278, \"name\": \"Peter Mensah\", \"order\": 27}, {\"cast_id\": 49, \"character\": \"Link Room Tech\", \"credit_id\": \"52fe48009251416c750aca9b\", \"gender\": 0, \"id\": 1207247, \"name\": \"Sonia Yee\", \"order\": 28}, {\"cast_id\": 50, \"character\": \"Basketball Avatar / Troupe\", \"credit_id\": \"52fe48009251416c750aca9f\", \"gender\": 1, \"id\": 1207248, \"name\": \"Jahnel Curfman\", \"order\": 29}, {\"cast_id\": 51, \"character\": \"Basketball Avatar\", \"credit_id\": \"52fe48009251416c750acaa3\", \"gender\": 0, \"id\": 89714, \"name\": \"Ilram Choi\", \"order\": 30}, {\"cast_id\": 52, \"character\": \"Na\\'vi Child\", \"credit_id\": \"52fe48009251416c750acaa7\", \"gender\": 0, \"id\": 1207249, \"name\": \"Kyla Warren\", \"order\": 31}, {\"cast_id\": 53, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acaab\", \"gender\": 0, \"id\": 1207250, \"name\": \"Lisa Roumain\", \"order\": 32}, {\"cast_id\": 54, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acaaf\", \"gender\": 1, \"id\": 83105, \"name\": \"Debra Wilson\", \"order\": 33}, {\"cast_id\": 57, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acabb\", \"gender\": 0, \"id\": 1207253, \"name\": \"Chris Mala\", \"order\": 34}, {\"cast_id\": 55, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acab3\", \"gender\": 0, \"id\": 1207251, \"name\": \"Taylor Kibby\", \"order\": 35}, {\"cast_id\": 56, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acab7\", \"gender\": 0, \"id\": 1207252, \"name\": \"Jodie Landau\", \"order\": 36}, {\"cast_id\": 58, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acabf\", \"gender\": 0, \"id\": 1207254, \"name\": \"Julie Lamm\", \"order\": 37}, {\"cast_id\": 59, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acac3\", \"gender\": 0, \"id\": 1207257, \"name\": \"Cullen B. Madden\", \"order\": 38}, {\"cast_id\": 60, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acac7\", \"gender\": 0, \"id\": 1207259, \"name\": \"Joseph Brady Madden\", \"order\": 39}, {\"cast_id\": 61, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acacb\", \"gender\": 0, \"id\": 1207262, \"name\": \"Frankie Torres\", \"order\": 40}, {\"cast_id\": 62, \"character\": \"Troupe\", \"credit_id\": \"52fe48009251416c750acacf\", \"gender\": 1, \"id\": 1158600, \"name\": \"Austin Wilson\", \"order\": 41}, {\"cast_id\": 63, \"character\": \"Troupe\", \"credit_id\": \"52fe48019251416c750acad3\", \"gender\": 1, \"id\": 983705, \"name\": \"Sara Wilson\", \"order\": 42}, {\"cast_id\": 64, \"character\": \"Troupe\", \"credit_id\": \"52fe48019251416c750acad7\", \"gender\": 0, \"id\": 1207263, \"name\": \"Tamica Washington-Miller\", \"order\": 43}, {\"cast_id\": 65, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acadb\", \"gender\": 1, \"id\": 1145098, \"name\": \"Lucy Briant\", \"order\": 44}, {\"cast_id\": 66, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acadf\", \"gender\": 2, \"id\": 33305, \"name\": \"Nathan Meister\", \"order\": 45}, {\"cast_id\": 67, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acae3\", \"gender\": 0, \"id\": 1207264, \"name\": \"Gerry Blair\", \"order\": 46}, {\"cast_id\": 68, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acae7\", \"gender\": 2, \"id\": 33311, \"name\": \"Matthew Chamberlain\", \"order\": 47}, {\"cast_id\": 69, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acaeb\", \"gender\": 0, \"id\": 1207265, \"name\": \"Paul Yates\", \"order\": 48}, {\"cast_id\": 70, \"character\": \"Op Center Duty Officer\", \"credit_id\": \"52fe48019251416c750acaef\", \"gender\": 0, \"id\": 1207266, \"name\": \"Wray Wilson\", \"order\": 49}, {\"cast_id\": 71, \"character\": \"Op Center Staff\", \"credit_id\": \"52fe48019251416c750acaf3\", \"gender\": 2, \"id\": 54492, \"name\": \"James Gaylyn\", \"order\": 50}, {\"cast_id\": 72, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acaf7\", \"gender\": 0, \"id\": 1207267, \"name\": \"Melvin Leno Clark III\", \"order\": 51}, {\"cast_id\": 73, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acafb\", \"gender\": 0, \"id\": 1207268, \"name\": \"Carvon Futrell\", \"order\": 52}, {\"cast_id\": 74, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acaff\", \"gender\": 0, \"id\": 1207269, \"name\": \"Brandon Jelkes\", \"order\": 53}, {\"cast_id\": 75, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb03\", \"gender\": 0, \"id\": 1207270, \"name\": \"Micah Moch\", \"order\": 54}, {\"cast_id\": 76, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb07\", \"gender\": 0, \"id\": 1207271, \"name\": \"Hanniyah Muhammad\", \"order\": 55}, {\"cast_id\": 77, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb0b\", \"gender\": 0, \"id\": 1207272, \"name\": \"Christopher Nolen\", \"order\": 56}, {\"cast_id\": 78, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb0f\", \"gender\": 0, \"id\": 1207273, \"name\": \"Christa Oliver\", \"order\": 57}, {\"cast_id\": 79, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb13\", \"gender\": 0, \"id\": 1207274, \"name\": \"April Marie Thomas\", \"order\": 58}, {\"cast_id\": 80, \"character\": \"Dancer\", \"credit_id\": \"52fe48019251416c750acb17\", \"gender\": 0, \"id\": 1207275, \"name\": \"Bravita A. Threatt\", \"order\": 59}, {\"cast_id\": 81, \"character\": \"Mining Chief (uncredited)\", \"credit_id\": \"52fe48019251416c750acb1b\", \"gender\": 0, \"id\": 1207276, \"name\": \"Colin Bleasdale\", \"order\": 60}, {\"cast_id\": 82, \"character\": \"Veteran Miner (uncredited)\", \"credit_id\": \"52fe48019251416c750acb1f\", \"gender\": 0, \"id\": 107969, \"name\": \"Mike Bodnar\", \"order\": 61}, {\"cast_id\": 83, \"character\": \"Richard (uncredited)\", \"credit_id\": \"52fe48019251416c750acb23\", \"gender\": 0, \"id\": 1207278, \"name\": \"Matt Clayton\", \"order\": 62}, {\"cast_id\": 84, \"character\": \"Nav\\'i (uncredited)\", \"credit_id\": \"52fe48019251416c750acb27\", \"gender\": 1, \"id\": 147898, \"name\": \"Nicole Dionne\", \"order\": 63}, {\"cast_id\": 85, \"character\": \"Trooper (uncredited)\", \"credit_id\": \"52fe48019251416c750acb2b\", \"gender\": 0, \"id\": 1207280, \"name\": \"Jamie Harrison\", \"order\": 64}, {\"cast_id\": 86, \"character\": \"Trooper (uncredited)\", \"credit_id\": \"52fe48019251416c750acb2f\", \"gender\": 0, \"id\": 1207281, \"name\": \"Allan Henry\", \"order\": 65}, {\"cast_id\": 87, \"character\": \"Ground Technician (uncredited)\", \"credit_id\": \"52fe48019251416c750acb33\", \"gender\": 2, \"id\": 1207282, \"name\": \"Anthony Ingruber\", \"order\": 66}, {\"cast_id\": 88, \"character\": \"Flight Crew Mechanic (uncredited)\", \"credit_id\": \"52fe48019251416c750acb37\", \"gender\": 0, \"id\": 1207283, \"name\": \"Ashley Jeffery\", \"order\": 67}, {\"cast_id\": 14, \"character\": \"Samson Pilot\", \"credit_id\": \"52fe48009251416c750ac9f9\", \"gender\": 0, \"id\": 98216, \"name\": \"Dean Knowsley\", \"order\": 68}, {\"cast_id\": 89, \"character\": \"Trooper (uncredited)\", \"credit_id\": \"52fe48019251416c750acb3b\", \"gender\": 0, \"id\": 1201399, \"name\": \"Joseph Mika-Hunt\", \"order\": 69}, {\"cast_id\": 90, \"character\": \"Banshee (uncredited)\", \"credit_id\": \"52fe48019251416c750acb3f\", \"gender\": 0, \"id\": 236696, \"name\": \"Terry Notary\", \"order\": 70}, {\"cast_id\": 91, \"character\": \"Soldier (uncredited)\", \"credit_id\": \"52fe48019251416c750acb43\", \"gender\": 0, \"id\": 1207287, \"name\": \"Kai Pantano\", \"order\": 71}, {\"cast_id\": 92, \"character\": \"Blast Technician (uncredited)\", \"credit_id\": \"52fe48019251416c750acb47\", \"gender\": 0, \"id\": 1207288, \"name\": \"Logan Pithyou\", \"order\": 72}, {\"cast_id\": 93, \"character\": \"Vindum Raah (uncredited)\", \"credit_id\": \"52fe48019251416c750acb4b\", \"gender\": 0, \"id\": 1207289, \"name\": \"Stuart Pollock\", \"order\": 73}, {\"cast_id\": 94, \"character\": \"Hero (uncredited)\", \"credit_id\": \"52fe48019251416c750acb4f\", \"gender\": 0, \"id\": 584868, \"name\": \"Raja\", \"order\": 74}, {\"cast_id\": 95, \"character\": \"Ops Centreworker (uncredited)\", \"credit_id\": \"52fe48019251416c750acb53\", \"gender\": 0, \"id\": 1207290, \"name\": \"Gareth Ruck\", \"order\": 75}, {\"cast_id\": 96, \"character\": \"Engineer (uncredited)\", \"credit_id\": \"52fe48019251416c750acb57\", \"gender\": 0, \"id\": 1062463, \"name\": \"Rhian Sheehan\", \"order\": 76}, {\"cast_id\": 97, \"character\": \"Col. Quaritch\\'s Mech Suit (uncredited)\", \"credit_id\": \"52fe48019251416c750acb5b\", \"gender\": 0, \"id\": 60656, \"name\": \"T. J. Storm\", \"order\": 77}, {\"cast_id\": 98, \"character\": \"Female Marine (uncredited)\", \"credit_id\": \"52fe48019251416c750acb5f\", \"gender\": 0, \"id\": 1207291, \"name\": \"Jodie Taylor\", \"order\": 78}, {\"cast_id\": 99, \"character\": \"Ikran Clan Leader (uncredited)\", \"credit_id\": \"52fe48019251416c750acb63\", \"gender\": 1, \"id\": 1186027, \"name\": \"Alicia Vela-Bailey\", \"order\": 79}, {\"cast_id\": 100, \"character\": \"Geologist (uncredited)\", \"credit_id\": \"52fe48019251416c750acb67\", \"gender\": 0, \"id\": 1207292, \"name\": \"Richard Whiteside\", \"order\": 80}, {\"cast_id\": 101, \"character\": \"Na\\'vi (uncredited)\", \"credit_id\": \"52fe48019251416c750acb6b\", \"gender\": 0, \"id\": 103259, \"name\": \"Nikie Zambo\", \"order\": 81}, {\"cast_id\": 102, \"character\": \"Ambient Room Tech / Troupe\", \"credit_id\": \"52fe48019251416c750acb6f\", \"gender\": 1, \"id\": 42286, \"name\": \"Julene Renee\", \"order\": 82}]'],\n",
+       "      dtype=object)"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "credits.head(1)['cast'].values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "76f03a56",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.287496Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.287096Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.317786Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.316781Z"
+    },
+    "papermill": {
+     "duration": 0.043194,
+     "end_time": "2025-01-13T19:00:20.319742",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.276548",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies = movies.merge(credits,on='title')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "69ea4708",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.339891Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.339561Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.346245Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.345232Z"
+    },
+    "papermill": {
+     "duration": 0.018457,
+     "end_time": "2025-01-13T19:00:20.347834",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.329377",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies = movies[['movie_id','title','overview','genres','keywords','cast','crew']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "be7b32a6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.367875Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.367548Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.379004Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.378061Z"
+    },
+    "papermill": {
+     "duration": 0.023502,
+     "end_time": "2025-01-13T19:00:20.380873",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.357371",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>overview</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>keywords</th>\n",
+       "      <th>cast</th>\n",
+       "      <th>crew</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>19995</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>In the 22nd century, a paraplegic Marine is di...</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>[{\"id\": 1463, \"name\": \"culture clash\"}, {\"id\":...</td>\n",
+       "      <td>[{\"cast_id\": 242, \"character\": \"Jake Sully\", \"...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe48009251416c750aca23\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>285</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>Captain Barbossa, long believed to be dead, ha...</td>\n",
+       "      <td>[{\"id\": 12, \"name\": \"Adventure\"}, {\"id\": 14, \"...</td>\n",
+       "      <td>[{\"id\": 270, \"name\": \"ocean\"}, {\"id\": 726, \"na...</td>\n",
+       "      <td>[{\"cast_id\": 4, \"character\": \"Captain Jack Spa...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe4232c3a36847f800b579\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>206647</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>A cryptic message from Bond’s past sends him o...</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>[{\"id\": 470, \"name\": \"spy\"}, {\"id\": 818, \"name...</td>\n",
+       "      <td>[{\"cast_id\": 1, \"character\": \"James Bond\", \"cr...</td>\n",
+       "      <td>[{\"credit_id\": \"54805967c3a36829b5002c41\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>49026</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>Following the death of District Attorney Harve...</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 80, \"nam...</td>\n",
+       "      <td>[{\"id\": 849, \"name\": \"dc comics\"}, {\"id\": 853,...</td>\n",
+       "      <td>[{\"cast_id\": 2, \"character\": \"Bruce Wayne / Ba...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe4781c3a36847f81398c3\", \"de...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>49529</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>John Carter is a war-weary, former military ca...</td>\n",
+       "      <td>[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...</td>\n",
+       "      <td>[{\"id\": 818, \"name\": \"based on novel\"}, {\"id\":...</td>\n",
+       "      <td>[{\"cast_id\": 5, \"character\": \"John Carter\", \"c...</td>\n",
+       "      <td>[{\"credit_id\": \"52fe479ac3a36847f813eaa3\", \"de...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                                     title  \\\n",
+       "0     19995                                    Avatar   \n",
+       "1       285  Pirates of the Caribbean: At World's End   \n",
+       "2    206647                                   Spectre   \n",
+       "3     49026                     The Dark Knight Rises   \n",
+       "4     49529                               John Carter   \n",
+       "\n",
+       "                                            overview  \\\n",
+       "0  In the 22nd century, a paraplegic Marine is di...   \n",
+       "1  Captain Barbossa, long believed to be dead, ha...   \n",
+       "2  A cryptic message from Bond’s past sends him o...   \n",
+       "3  Following the death of District Attorney Harve...   \n",
+       "4  John Carter is a war-weary, former military ca...   \n",
+       "\n",
+       "                                              genres  \\\n",
+       "0  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "1  [{\"id\": 12, \"name\": \"Adventure\"}, {\"id\": 14, \"...   \n",
+       "2  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "3  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 80, \"nam...   \n",
+       "4  [{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"nam...   \n",
+       "\n",
+       "                                            keywords  \\\n",
+       "0  [{\"id\": 1463, \"name\": \"culture clash\"}, {\"id\":...   \n",
+       "1  [{\"id\": 270, \"name\": \"ocean\"}, {\"id\": 726, \"na...   \n",
+       "2  [{\"id\": 470, \"name\": \"spy\"}, {\"id\": 818, \"name...   \n",
+       "3  [{\"id\": 849, \"name\": \"dc comics\"}, {\"id\": 853,...   \n",
+       "4  [{\"id\": 818, \"name\": \"based on novel\"}, {\"id\":...   \n",
+       "\n",
+       "                                                cast  \\\n",
+       "0  [{\"cast_id\": 242, \"character\": \"Jake Sully\", \"...   \n",
+       "1  [{\"cast_id\": 4, \"character\": \"Captain Jack Spa...   \n",
+       "2  [{\"cast_id\": 1, \"character\": \"James Bond\", \"cr...   \n",
+       "3  [{\"cast_id\": 2, \"character\": \"Bruce Wayne / Ba...   \n",
+       "4  [{\"cast_id\": 5, \"character\": \"John Carter\", \"c...   \n",
+       "\n",
+       "                                                crew  \n",
+       "0  [{\"credit_id\": \"52fe48009251416c750aca23\", \"de...  \n",
+       "1  [{\"credit_id\": \"52fe4232c3a36847f800b579\", \"de...  \n",
+       "2  [{\"credit_id\": \"54805967c3a36829b5002c41\", \"de...  \n",
+       "3  [{\"credit_id\": \"52fe4781c3a36847f81398c3\", \"de...  \n",
+       "4  [{\"credit_id\": \"52fe479ac3a36847f813eaa3\", \"de...  "
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "278d11bd",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.401360Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.400964Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.412089Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.411168Z"
+    },
+    "papermill": {
+     "duration": 0.023053,
+     "end_time": "2025-01-13T19:00:20.413651",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.390598",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "movie_id    0\n",
+       "title       0\n",
+       "overview    3\n",
+       "genres      0\n",
+       "keywords    0\n",
+       "cast        0\n",
+       "crew        0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "f0c2ba09",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.434732Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.434389Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.445480Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.444519Z"
+    },
+    "papermill": {
+     "duration": 0.024099,
+     "end_time": "2025-01-13T19:00:20.447432",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.423333",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies.dropna(inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "b8898f27",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.468622Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.468284Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.574475Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.573490Z"
+    },
+    "papermill": {
+     "duration": 0.118532,
+     "end_time": "2025-01-13T19:00:20.576087",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.457555",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.duplicated().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "fc15544e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.597105Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.596730Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.602699Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.601863Z"
+    },
+    "papermill": {
+     "duration": 0.01838,
+     "end_time": "2025-01-13T19:00:20.604341",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.585961",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'[{\"id\": 28, \"name\": \"Action\"}, {\"id\": 12, \"name\": \"Adventure\"}, {\"id\": 14, \"name\": \"Fantasy\"}, {\"id\": 878, \"name\": \"Science Fiction\"}]'"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "movies.loc[0,'genres']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "9650b8fe",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.625383Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.625038Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.629710Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.628779Z"
+    },
+    "papermill": {
+     "duration": 0.017039,
+     "end_time": "2025-01-13T19:00:20.631352",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.614313",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import ast\n",
+    "def convert_to_list(obj):\n",
+    "    L = []\n",
+    "    for i in ast.literal_eval(obj):\n",
+    "        L.append(i['name'])\n",
+    "    return L"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "d149f42e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.652743Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.652394Z",
+     "iopub.status.idle": "2025-01-13T19:00:20.804714Z",
+     "shell.execute_reply": "2025-01-13T19:00:20.803663Z"
+    },
+    "papermill": {
+     "duration": 0.16515,
+     "end_time": "2025-01-13T19:00:20.806621",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.641471",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['genres']=movies['genres'].apply(convert_to_list)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "d9f4f397",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:20.828477Z",
+     "iopub.status.busy": "2025-01-13T19:00:20.828125Z",
+     "iopub.status.idle": "2025-01-13T19:00:21.206913Z",
+     "shell.execute_reply": "2025-01-13T19:00:21.205801Z"
+    },
+    "papermill": {
+     "duration": 0.391935,
+     "end_time": "2025-01-13T19:00:21.209015",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:20.817080",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['keywords']=movies['keywords'].apply(convert_to_list)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "725e266c",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:21.230587Z",
+     "iopub.status.busy": "2025-01-13T19:00:21.230212Z",
+     "iopub.status.idle": "2025-01-13T19:00:21.235215Z",
+     "shell.execute_reply": "2025-01-13T19:00:21.234197Z"
+    },
+    "papermill": {
+     "duration": 0.017507,
+     "end_time": "2025-01-13T19:00:21.236843",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:21.219336",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def convert_cast_to_list(obj):\n",
+    "    L=[]\n",
+    "    counter=0\n",
+    "    for i in ast.literal_eval(obj):\n",
+    "        if counter != 3:\n",
+    "            L.append(i['name'])\n",
+    "            counter+=1\n",
+    "        else:\n",
+    "            break\n",
+    "    return L"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "9e2491e1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:21.258056Z",
+     "iopub.status.busy": "2025-01-13T19:00:21.257684Z",
+     "iopub.status.idle": "2025-01-13T19:00:24.367208Z",
+     "shell.execute_reply": "2025-01-13T19:00:24.366334Z"
+    },
+    "papermill": {
+     "duration": 3.122386,
+     "end_time": "2025-01-13T19:00:24.369145",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:21.246759",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['cast']=movies['cast'].apply(convert_cast_to_list)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "ab74bb39",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:24.391861Z",
+     "iopub.status.busy": "2025-01-13T19:00:24.391532Z",
+     "iopub.status.idle": "2025-01-13T19:00:24.396122Z",
+     "shell.execute_reply": "2025-01-13T19:00:24.395238Z"
+    },
+    "papermill": {
+     "duration": 0.018306,
+     "end_time": "2025-01-13T19:00:24.397689",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:24.379383",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def get_director(obj):\n",
+    "    L=[]\n",
+    "    counter=0\n",
+    "    for i in ast.literal_eval(obj):\n",
+    "        if i['job'] == 'Director':\n",
+    "            L.append(i['name'])\n",
+    "            break\n",
+    "    return L"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "163b2be9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:24.418660Z",
+     "iopub.status.busy": "2025-01-13T19:00:24.418308Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.008505Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.007376Z"
+    },
+    "papermill": {
+     "duration": 3.60287,
+     "end_time": "2025-01-13T19:00:28.010293",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:24.407423",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['crew']=movies['crew'].apply(get_director)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "56d76830",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.031741Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.031415Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.073886Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.072897Z"
+    },
+    "papermill": {
+     "duration": 0.055565,
+     "end_time": "2025-01-13T19:00:28.075836",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.020271",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['overview']=movies['overview'].apply(lambda x: x.split())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "d81826fe",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.096941Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.096596Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.105851Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.104951Z"
+    },
+    "papermill": {
+     "duration": 0.021657,
+     "end_time": "2025-01-13T19:00:28.107435",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.085778",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['genres']=movies['genres'].apply(lambda x: [i.replace(\" \",\"\") for i in x])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "63ddd560",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.128483Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.128119Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.237176Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.235750Z"
+    },
+    "papermill": {
+     "duration": 0.121668,
+     "end_time": "2025-01-13T19:00:28.239068",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.117400",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['keywords']=movies['keywords'].apply(lambda x: [i.replace(\" \",\"\") for i in x])\n",
+    "movies['cast']=movies['cast'].apply(lambda x: [i.replace(\" \",\"\") for i in x])\n",
+    "movies['crew']=movies['crew'].apply(lambda x: [i.replace(\" \",\"\") for i in x])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 23,
+   "id": "063c45f2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.260354Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.259933Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.320840Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.319753Z"
+    },
+    "papermill": {
+     "duration": 0.073538,
+     "end_time": "2025-01-13T19:00:28.322644",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.249106",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "movies['tags'] = movies['overview'] + movies['genres'] + movies['keywords'] + movies['cast']+ movies['crew']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "id": "fb09af60",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.343620Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.343271Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.348671Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.347727Z"
+    },
+    "papermill": {
+     "duration": 0.017496,
+     "end_time": "2025-01-13T19:00:28.350132",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.332636",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "new_df = movies[['movie_id','title','tags']]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "id": "38bcfdea",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.370887Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.370552Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.382523Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.381577Z"
+    },
+    "papermill": {
+     "duration": 0.024193,
+     "end_time": "2025-01-13T19:00:28.384119",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.359926",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>tags</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>19995</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>[In, the, 22nd, century,, a, paraplegic, Marin...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>285</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>[Captain, Barbossa,, long, believed, to, be, d...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>206647</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>[A, cryptic, message, from, Bond’s, past, send...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>49026</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>[Following, the, death, of, District, Attorney...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>49529</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>[John, Carter, is, a, war-weary,, former, mili...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                                     title  \\\n",
+       "0     19995                                    Avatar   \n",
+       "1       285  Pirates of the Caribbean: At World's End   \n",
+       "2    206647                                   Spectre   \n",
+       "3     49026                     The Dark Knight Rises   \n",
+       "4     49529                               John Carter   \n",
+       "\n",
+       "                                                tags  \n",
+       "0  [In, the, 22nd, century,, a, paraplegic, Marin...  \n",
+       "1  [Captain, Barbossa,, long, believed, to, be, d...  \n",
+       "2  [A, cryptic, message, from, Bond’s, past, send...  \n",
+       "3  [Following, the, death, of, District, Attorney...  \n",
+       "4  [John, Carter, is, a, war-weary,, former, mili...  "
+      ]
+     },
+     "execution_count": 25,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "id": "1daf7cf5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.405372Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.405035Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.421842Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.420873Z"
+    },
+    "papermill": {
+     "duration": 0.029567,
+     "end_time": "2025-01-13T19:00:28.423843",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.394276",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "new_df['tags']=new_df['tags'].apply(lambda x: \" \".join(x))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "id": "de2c462e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.446639Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.446300Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.459057Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.458104Z"
+    },
+    "papermill": {
+     "duration": 0.026068,
+     "end_time": "2025-01-13T19:00:28.460883",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.434815",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "new_df['tags']=new_df['tags'].apply(lambda x: x.lower())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "id": "71c156b8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.482092Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.481727Z",
+     "iopub.status.idle": "2025-01-13T19:00:28.490840Z",
+     "shell.execute_reply": "2025-01-13T19:00:28.489669Z"
+    },
+    "papermill": {
+     "duration": 0.021626,
+     "end_time": "2025-01-13T19:00:28.492630",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.471004",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>movie_id</th>\n",
+       "      <th>title</th>\n",
+       "      <th>tags</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>19995</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>in the 22nd century, a paraplegic marine is di...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>285</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>captain barbossa, long believed to be dead, ha...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>206647</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>a cryptic message from bond’s past sends him o...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>49026</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>following the death of district attorney harve...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>49529</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>john carter is a war-weary, former military ca...</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   movie_id                                     title  \\\n",
+       "0     19995                                    Avatar   \n",
+       "1       285  Pirates of the Caribbean: At World's End   \n",
+       "2    206647                                   Spectre   \n",
+       "3     49026                     The Dark Knight Rises   \n",
+       "4     49529                               John Carter   \n",
+       "\n",
+       "                                                tags  \n",
+       "0  in the 22nd century, a paraplegic marine is di...  \n",
+       "1  captain barbossa, long believed to be dead, ha...  \n",
+       "2  a cryptic message from bond’s past sends him o...  \n",
+       "3  following the death of district attorney harve...  \n",
+       "4  john carter is a war-weary, former military ca...  "
+      ]
+     },
+     "execution_count": 28,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "new_df.head()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "099b31a1",
+   "metadata": {
+    "papermill": {
+     "duration": 0.009763,
+     "end_time": "2025-01-13T19:00:28.512679",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.502916",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Vectorization"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "8c48e941",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:28.534200Z",
+     "iopub.status.busy": "2025-01-13T19:00:28.533814Z",
+     "iopub.status.idle": "2025-01-13T19:00:30.575275Z",
+     "shell.execute_reply": "2025-01-13T19:00:30.574097Z"
+    },
+    "papermill": {
+     "duration": 2.054541,
+     "end_time": "2025-01-13T19:00:30.577277",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:28.522736",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.feature_extraction.text import CountVectorizer\n",
+    "import nltk"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "7c063dea",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:30.599248Z",
+     "iopub.status.busy": "2025-01-13T19:00:30.598735Z",
+     "iopub.status.idle": "2025-01-13T19:00:30.603377Z",
+     "shell.execute_reply": "2025-01-13T19:00:30.602109Z"
+    },
+    "papermill": {
+     "duration": 0.017472,
+     "end_time": "2025-01-13T19:00:30.605151",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:30.587679",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from nltk.stem.porter import PorterStemmer\n",
+    "ps = PorterStemmer()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "9170deeb",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:30.626858Z",
+     "iopub.status.busy": "2025-01-13T19:00:30.626531Z",
+     "iopub.status.idle": "2025-01-13T19:00:30.631568Z",
+     "shell.execute_reply": "2025-01-13T19:00:30.630472Z"
+    },
+    "papermill": {
+     "duration": 0.017885,
+     "end_time": "2025-01-13T19:00:30.633371",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:30.615486",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def stem(text):\n",
+    "    L = []\n",
+    "\n",
+    "    for i in text.split():\n",
+    "        L.append(ps.stem(i))\n",
+    "\n",
+    "    return ' '.join(L)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 32,
+   "id": "e3a640c2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:30.655889Z",
+     "iopub.status.busy": "2025-01-13T19:00:30.655559Z",
+     "iopub.status.idle": "2025-01-13T19:00:36.177121Z",
+     "shell.execute_reply": "2025-01-13T19:00:36.176199Z"
+    },
+    "papermill": {
+     "duration": 5.534787,
+     "end_time": "2025-01-13T19:00:36.178961",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:30.644174",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "new_df['tags'] = new_df['tags'].apply(stem)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "43a67e2f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:36.201085Z",
+     "iopub.status.busy": "2025-01-13T19:00:36.200672Z",
+     "iopub.status.idle": "2025-01-13T19:00:36.205121Z",
+     "shell.execute_reply": "2025-01-13T19:00:36.204043Z"
+    },
+    "papermill": {
+     "duration": 0.017287,
+     "end_time": "2025-01-13T19:00:36.206777",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:36.189490",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "cv = CountVectorizer(max_features = 5000,stop_words='english')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "id": "75e51984",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:36.229350Z",
+     "iopub.status.busy": "2025-01-13T19:00:36.228934Z",
+     "iopub.status.idle": "2025-01-13T19:00:36.770832Z",
+     "shell.execute_reply": "2025-01-13T19:00:36.769458Z"
+    },
+    "papermill": {
+     "duration": 0.555758,
+     "end_time": "2025-01-13T19:00:36.773475",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:36.217717",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "vectors = cv.fit_transform(new_df['tags']).toarray()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8a47bc83",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T14:18:07.541140Z",
+     "iopub.status.busy": "2025-01-13T14:18:07.540727Z",
+     "iopub.status.idle": "2025-01-13T14:18:07.566138Z",
+     "shell.execute_reply": "2025-01-13T14:18:07.564767Z",
+     "shell.execute_reply.started": "2025-01-13T14:18:07.541100Z"
+    },
+    "papermill": {
+     "duration": 0.009988,
+     "end_time": "2025-01-13T19:00:36.794092",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:36.784104",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Finding Cosine Similarity\n",
+    "\n",
+    "cosine similarity = 1/cosine distance"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "dc1681d8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:36.815562Z",
+     "iopub.status.busy": "2025-01-13T19:00:36.815161Z",
+     "iopub.status.idle": "2025-01-13T19:00:36.819413Z",
+     "shell.execute_reply": "2025-01-13T19:00:36.818438Z"
+    },
+    "papermill": {
+     "duration": 0.016848,
+     "end_time": "2025-01-13T19:00:36.821020",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:36.804172",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics.pairwise import cosine_similarity"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "a04ee4c4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:36.842726Z",
+     "iopub.status.busy": "2025-01-13T19:00:36.842378Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.057539Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.056158Z"
+    },
+    "papermill": {
+     "duration": 2.229125,
+     "end_time": "2025-01-13T19:00:39.060453",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:36.831328",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "similarity = cosine_similarity(vectors)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 37,
+   "id": "bb695109",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.088304Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.087914Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.093755Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.092722Z"
+    },
+    "papermill": {
+     "duration": 0.018731,
+     "end_time": "2025-01-13T19:00:39.095349",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.076618",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(4806,)"
+      ]
+     },
+     "execution_count": 37,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "similarity[0].shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4b586b0b",
+   "metadata": {
+    "papermill": {
+     "duration": 0.011123,
+     "end_time": "2025-01-13T19:00:39.116857",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.105734",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Main Function"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 38,
+   "id": "1d73b7e7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.138610Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.138223Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.147606Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.146664Z"
+    },
+    "papermill": {
+     "duration": 0.022388,
+     "end_time": "2025-01-13T19:00:39.149495",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.127107",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "[(1216, 0.28676966733820225),\n",
+       " (2409, 0.26901379342448517),\n",
+       " (3730, 0.2605130246476754),\n",
+       " (507, 0.255608593705383),\n",
+       " (539, 0.25038669783359574)]"
+      ]
+     },
+     "execution_count": 38,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "sorted(list(enumerate(similarity[0])),reverse=True,key = lambda x: x[1])[1:6]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 39,
+   "id": "d986f2da",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.172449Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.172085Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.177294Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.176292Z"
+    },
+    "papermill": {
+     "duration": 0.018534,
+     "end_time": "2025-01-13T19:00:39.178846",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.160312",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def recommend(movie):\n",
+    "    movie_index = new_df[new_df['title'] == movie].index[0]\n",
+    "    distance = similarity[movie_index]\n",
+    "    movies_list = sorted(list(enumerate(distance)),reverse=True,key = lambda x: x[1])[1:6]\n",
+    "\n",
+    "    for i in movies_list:\n",
+    "        print(new_df.iloc[i[0]].title)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 40,
+   "id": "e4a2aef7",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.200667Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.200336Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.211083Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.209742Z"
+    },
+    "papermill": {
+     "duration": 0.023371,
+     "end_time": "2025-01-13T19:00:39.212705",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.189334",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "The Amazing Spider-Man\n",
+      "Spider-Man 3\n",
+      "Forgetting Sarah Marshall\n",
+      "Spider-Man\n",
+      "I Love You, Man\n"
+     ]
+    }
+   ],
+   "source": [
+    "recommend('The Amazing Spider-Man 2')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 41,
+   "id": "ab643ef9",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.234854Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.234529Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.238632Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.237598Z"
+    },
+    "papermill": {
+     "duration": 0.016922,
+     "end_time": "2025-01-13T19:00:39.240297",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.223375",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import pickle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "id": "911a71ed",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.262803Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.262464Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.271944Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.271050Z"
+    },
+    "papermill": {
+     "duration": 0.022617,
+     "end_time": "2025-01-13T19:00:39.273750",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.251133",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "pickle.dump(new_df,open('movies.pkl','wb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 43,
+   "id": "5a3257ae",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-13T19:00:39.296070Z",
+     "iopub.status.busy": "2025-01-13T19:00:39.295703Z",
+     "iopub.status.idle": "2025-01-13T19:00:39.646917Z",
+     "shell.execute_reply": "2025-01-13T19:00:39.645965Z"
+    },
+    "papermill": {
+     "duration": 0.364464,
+     "end_time": "2025-01-13T19:00:39.648865",
+     "exception": false,
+     "start_time": "2025-01-13T19:00:39.284401",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "pickle.dump(similarity,open('similarity.pkl','wb'))"
+   ]
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "datasetId": 138,
+     "sourceId": 4508,
+     "sourceType": "datasetVersion"
+    }
+   ],
+   "dockerImageVersionId": 30822,
+   "isGpuEnabled": false,
+   "isInternetEnabled": true,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.12"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 23.947446,
+   "end_time": "2025-01-13T19:00:40.480352",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2025-01-13T19:00:16.532906",
+   "version": "2.6.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
